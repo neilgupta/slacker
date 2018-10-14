@@ -30,14 +30,18 @@ You can also override any of the above options by passing them directly to Slack
     -i "Your bot's icon, like :poop:"
     -t "Text you want to send"
 
-Only the webhook and text parameters are required, and can be defined in your .slacker file or passed as arguments.
+Alternatively, you can pass a json payload that includes all of the above (or anything else [Slack's API](https://api.slack.com/incoming-webhooks) supports):
+
+    -p "{\"text\": \"Text you want to send\",\"channel\":\"#general\",\"attachments\":[]}"
+
+Only the webhook and text/payload parameters are required, and can be defined in your .slacker file or passed as arguments.
 
     slacker -h WEBHOOK_URL -c SLACK_CHANNEL -u SLACK_USERNAME -i SLACK_EMOJI -t "This is a message from Slacker"
 
 ## License
 
 The MIT License (MIT)
-Copyright (c) 2016 Neil Gupta
+Copyright (c) 2018 Neil Gupta
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

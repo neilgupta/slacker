@@ -2,11 +2,11 @@
 
 set -e
 
-VERSION="1.0.1"
+VERSION="1.1.0"
 
 help="
     Slacker, version ${VERSION}
-    Copyright (C) 2016 Neil Gupta
+    Copyright (C) 2018 Neil Gupta
 
     Simple command line utility for posting messages to Slack.
 
@@ -28,7 +28,11 @@ help="
       -i \"Your bot's icon, like :poop:\"
       -t \"Text you want to send\"
 
-    Only the webhook and text parameters are required, and can be defined in your .slacker file or passed as arguments.
+    Alternatively, you can pass a json payload that includes all of the above (or anything else Slack's API supports):
+
+      -p \"{\\\"text\\\": \\\"Text you want to send\\\",\\\"channel\\\":\\\"#general\\\",\\\"attachments\\\":[]}\"
+
+    Only the webhook and text/payload parameters are required, and can be defined in your .slacker file or passed as arguments.
 
     USAGE: slacker [-h WEBHOOK_URL] [-c SLACK_CHANNEL] [-u SLACK_USERNAME] [-i SLACK_EMOJI] [-t \"This is a message from Slacker\"]
 "
@@ -62,7 +66,7 @@ else
 fi
 
 # load command line options
-while getopts h:u:i:c:t: option
+while getopts h:u:i:c:t:p: option
 do
   case "${option}" in
     h) webhook=${OPTARG};;
@@ -70,41 +74,43 @@ do
     i) icon=${OPTARG};;
     c) channel=${OPTARG};;
     t) text=${OPTARG};;
+    p) payload=${OPTARG};;
   esac
 done
 
-if [ -z "${text}" ]; then
-  echo "${help}"
-  exit 1
+if [ -z "${payload}" ]; then
+  if [ -z "${text}" ]; then
+    echo "${help}"
+    exit 1
+  fi
+
+  # Check optional parameters
+  if [ -z "${channel}" ]; then
+    slacker_channel=""
+  else
+    slacker_channel=", \"channel\": \"${channel}\""
+  fi
+
+  if [ -z "${icon}" ]; then
+    icon_emoji=""
+  else
+    icon_emoji=", \"icon_emoji\": \"${icon}\""
+  fi
+
+  if [ -z "${username}" ]; then
+    slacker_username=", \"username\": \"Slacker\""
+  else
+    slacker_username=", \"username\": \"${username}\""
+  fi
+
+  # Construct payload of text and optional parameters
+  payload="{\"text\": \"${text}\"${slacker_channel}${slacker_username}${icon_emoji}}"
 fi
 
-# make sure after all of the above attempts, we have a webhook url
 if [ -z "${webhook}" ]; then
   echo "You must provide a slack webhook url to post messages to Slack. A webhook url looks like https://hooks.slack.com/services/123...."
   exit 1
 fi
 
-# Check optional parameters
-if [ -z "${channel}" ]; then
-  slacker_channel=""
-else
-  slacker_channel=", \"channel\": \"${channel}\""
-fi
-
-if [ -z "${icon}" ]; then
-  icon_emoji=""
-else
-  icon_emoji=", \"icon_emoji\": \"${icon}\""
-fi
-
-if [ -z "${username}" ]; then
-  slacker_username=", \"username\": \"Slacker\""
-else
-  slacker_username=", \"username\": \"${username}\""
-fi
-
-# Construct payload of text and optional parameters
-payload="payload={\"text\": \"${text}\"${slacker_channel}${slacker_username}${icon_emoji}}"
-
 # Send it!
-curl -X POST --data-urlencode "${payload}" $webhook
+curl -X POST -H "Content-Type: application/json" -d "${payload}" $webhook
